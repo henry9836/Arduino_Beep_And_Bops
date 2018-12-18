@@ -1,6 +1,6 @@
 # Morse
 
-<img src="https://media.giphy.com/media/5ziOXOj937E7l7cCyW/giphy.gif>
+<img src="https://media.giphy.com/media/5ziOXOj937E7l7cCyW/giphy.gif">
 
 ### Built By Henry Oliver
 
