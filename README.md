@@ -1,2 +1,5 @@
 # Arduino_Beep_And_Bops
-Projects I made on my Arduino
+
+<img src="https://i.imgur.com/SqixAeE.jpg">
+
+My Arduino Projects
