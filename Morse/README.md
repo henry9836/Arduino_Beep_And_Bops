@@ -1,6 +1,6 @@
 # Morse
 
-<img src="https://liatchan.sirv.com/gif.gif?canvas.width=501&canvas.height=282" width="501" height="282" alt="" />
+<img src="https://media.giphy.com/media/5ziOXOj937E7l7cCyW/giphy.gif>
 
 ### Built By Henry Oliver
 
