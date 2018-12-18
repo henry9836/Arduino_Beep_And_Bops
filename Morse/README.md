@@ -1,5 +1,7 @@
 # Morse
-<video src="https://i.imgur.com/8z73Lmd.mp4" width="320" height="200" controls preload></video>
+
+<img src="https://liatchan.sirv.com/gif.gif?canvas.width=501&canvas.height=282" width="501" height="282" alt="" />
+
 ### Built By Henry Oliver
 
 ### Features:
