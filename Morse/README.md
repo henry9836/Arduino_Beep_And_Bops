@@ -1,5 +1,5 @@
 # Morse
-[img]https://i.imgur.com/8z73Lmd.gif[/img]
+<video src="https://i.imgur.com/8z73Lmd.mp4" width="320" height="200" controls preload></video>
 ### Built By Henry Oliver
 
 ### Features:
