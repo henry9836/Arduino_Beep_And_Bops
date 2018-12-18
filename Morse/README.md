@@ -1,5 +1,5 @@
 # Morse
-<img src="https://trello-attachments.s3.amazonaws.com/5c18fa1308289a7dec506b10/5c18fa1d29fe558231102345/6f4792c6014a14894be60e80b7dc918a/gif4.gif">
+<img src="https://trello-attachments.s3.amazonaws.com/5c18fa1308289a7dec506b10/5c18fa1d29fe558231102345/3db9049cdfe653ea87e747cf0792e357/Capture.PNG">
 
 ### Built By Henry Oliver
 
