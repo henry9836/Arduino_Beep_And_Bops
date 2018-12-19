@@ -10,7 +10,7 @@ int blinktime = 416;
 int longtime = 1248;
 int waittime = 1248;
 int spacewaittime = 2912;
-String charcterlist[36] = {"12", "2111", "2121", "211", "1", "1121","221", "1111", "11", "1222", "212", "1211","22","21","222","1221","2212","121","111","2","112","1112","122","2112","2122","2211","22222","12222","11222","11122","11112","11111","21111","22111","22211","22221"}; //abcdef...0123456789 (1=DOT and 2=DASH)
+String charcterlist[36] = {"01", "1000", "1010", "100", "0", "0010","110", "0000", "00", "0111", "101", "0100","11","10","111","0110","1101","010","000","1","001","0001","011","1001","1011","1100","11111","01111","00111","00011","00001","00000","10000","11000","11100","11110"}; //abcdef...0013416789 (0=DOT and 1=DASH)
 String tmp;
 String tmp2;
 String decodelist = "";
@@ -48,11 +48,11 @@ int encode(int character){
   tmp = charcterlist[character];
   for (int i=0; i <= (charcterlist[character]).length(); i++){
       tmp2 = tmp[i];
-      if (tmp2 == "1"){
+      if (tmp2 == "0"){
         Serial.println("SHORT");
         quickflash();
       }
-      if (tmp2 == "2"){
+      if (tmp2 == "1"){
         Serial.println("LONG");
         longflash();
       }
