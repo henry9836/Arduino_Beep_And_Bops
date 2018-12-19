@@ -9,4 +9,6 @@
 - Encodes an input via serial and outputs morse code via LED
 - Decodes an input via digital input and outputs a string (needs to be tweaked as my light sensor is broken)
 
+<a href="https://i.imgur.com/kFuzIGA.mp4"> Example </a>
+
 <img src="https://raw.githubusercontent.com/henry9836/Arduino_Beep_And_Bops/master/Morse/morse_sch.jpg">
