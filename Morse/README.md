@@ -7,7 +7,7 @@
 
 - Supports A-Z, 0-9 and " "
 - Encodes an input via serial and outputs morse code via LED
-- Decodes an input via digital input and outputs a string
+- Decodes an input via digital input and outputs a string to serial
 
 <a href="https://i.imgur.com/kFuzIGA.mp4"> Example </a>
 
