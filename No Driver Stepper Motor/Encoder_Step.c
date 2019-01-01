@@ -1,8 +1,8 @@
 const int StepPin1 = 2; //BLUE
-const int StepPin2 = 3; //YELLOW
-const int StepPin3 = 4; //PINK
+const int StepPin2 = 3; //PINK
+const int StepPin3 = 4; //YELLOW
 const int StepPin4 = 5; //ORANGE
-const int turnsteps = 200;
+const int turnsteps = 1000;
 const int pulsedelay = 5;
 const int senddelay = 30;
 
