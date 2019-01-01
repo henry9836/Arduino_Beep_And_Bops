@@ -2,9 +2,9 @@ const int StepPin1 = 2; //BLUE
 const int StepPin2 = 3; //PINK
 const int StepPin3 = 4; //YELLOW
 const int StepPin4 = 5; //ORANGE
-const int turnsteps = 1000;
-const int pulsedelay = 5;
-const int senddelay = 30;
+const int turnsteps = 1000; //AMOUNT OF STEPS TO TAKE
+const int pulsedelay = 5; //DELAY BETWEEN PULSES
+const int senddelay = 30; //DELAY BETWEEN COMMANDS
 
 int incomingBIN;
 
@@ -20,7 +20,7 @@ void setup() {
 int SpinMeRightRound(int dir){
 
     if (dir == 1){
-    Serial.println("FORWARD! "); 
+    Serial.println("FORWARD! "); //THIS WILL MAKE THE MOTOR STEP FORWARDS YOU NEED TO GO FROM STEP 1-4 TO MAKE A FULL STEP
       // STEP 1
   
     digitalWrite(StepPin1, HIGH);
@@ -56,7 +56,7 @@ int SpinMeRightRound(int dir){
     
     else{
      
-    Serial.println("BACKWARDS! "); 
+    Serial.println("BACKWARDS! ");  //THIS WILL MAKE THE MOTOR STEP BACKWARDS YOU NEED TO GO FROM STEP 1-4 TO MAKE A FULL STEP
 
     // STEP 1
   
