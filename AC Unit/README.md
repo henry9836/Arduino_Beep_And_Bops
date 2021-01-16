@@ -1,4 +1,6 @@
 # AC Unit
+![gif](https://raw.githubusercontent.com/henry9836/Arduino_Beep_And_Bops/master/AC%20Unit/doc/cover.gif)
+##### Built By Henry Oliver
 
 A simple AC Unit that I created using an arduino.
 
