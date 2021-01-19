@@ -20,7 +20,9 @@ unsigned long cpm;        //variable for CPM
 unsigned int multiplier;  //variable for calculation CPM in this sketch
 unsigned long previousMillis;  //variable for time measurement
 
-int seed[31];
+const byte seedEmpty = 0x02; 
+
+byte seed[31];
 char cpmBuf[4];
 
 bool coin = false;
@@ -35,7 +37,7 @@ char keypadArray[KEYROWS][KEYCOLS] = {
   {'*', '0', '#', 'D'}
 };
 
-static char cross[] = {
+char cross[] = {
   0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
   0x00, 0x00, 0x00, 0xE0, 0x1C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x70, 0x00, 0x00, 0x00, 
@@ -133,6 +135,7 @@ float targetYPos = 0.0;
 float oldYPos = 0.0;
 
 const int buzzerPin = 8;
+unsigned long lastCoinTime = 0;
 
 //Use MEGA Communcation pins
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerSerial);
@@ -146,23 +149,31 @@ U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_RIGHT(U8G2_R0, /* clock=*/ 9, /* data
 
 //INTERUPT CAUSED BY RADIATION
 void tube_impulse(){
-  counts++;
-  for (int y = 0; y < 31; y++){
-    if (seed[y] == 0){
-      if (coin){
-        seed[y] = 2;
+
+  unsigned long currentTime = millis();
+
+  if (currentTime != lastCoinTime){
+    Serial.println(String(currentTime) + ":L" + String(lastCoinTime)); 
+    int s = millis() % 2;
+    lastCoinTime = currentTime;
+    counts++;
+    for (int y = 0; y < 31; y++){
+      if (seed[y] == seedEmpty){
+        if (s == 0){
+          seed[y] = 0x00;
+        }
+        else{
+          seed[y] = 0x01;
+        }
+        return;
       }
-      else{
-        seed[y] = 1;
-      }
-      return;
     }
   }
 }
 
 bool completeSeed(){
   for (int y = 0; y < 31; y++){
-    if (seed[y] == 0){
+    if (seed[y] == seedEmpty){
         return false;
     }
   }
@@ -181,6 +192,13 @@ float lerp(float a, float b, float x)
   return a + x * (b - a);
 }
 
+void resetSeed(){
+  for (int y = 0; y < 31; y++){
+    seed[y] = seedEmpty;
+  }
+
+}
+
 void updateGuage(float val, bool test){
     
     //update values
@@ -195,7 +213,8 @@ void updateGuage(float val, bool test){
       String displayText = String("sV/hr:" + String(val));
       DIS_RIGHT.clearBuffer();
       DIS_RIGHT.drawLine(64, 60, targetXPos, targetYPos);
-      DIS_RIGHT.drawStr(32, 32, displayText.c_str());  // write something to the internal memory
+      DIS_RIGHT.drawStr(25, 45, displayText.c_str());
+      DIS_RIGHT.drawCircle(64, 60, 6);
       DIS_RIGHT.sendBuffer();
     }
     
@@ -257,6 +276,9 @@ int matchPrint(){
 void setup() {
   Serial.begin(9600);
 
+  //seed
+  resetSeed();
+
   //finger print sensor
   finger.begin(57600);
   delay(5);
@@ -273,15 +295,15 @@ void setup() {
   //Displays
   DIS_RIGHT.begin();
   DIS_RIGHT.clearBuffer();
-  DIS_RIGHT.setFont(u8g2_font_pressstart2p_8f);  // choose a suitable font
+  DIS_RIGHT.setFont(u8g2_font_pressstart2p_8f);  
   DIS_RIGHT.drawXBM(0, 0, 128, 64, cross);
-  DIS_RIGHT.sendBuffer();         // transfer internal memory to the display
+  DIS_RIGHT.sendBuffer();        
 
   DIS_LEFT.begin();
   DIS_LEFT.clearBuffer();
-  DIS_LEFT.setFont(u8g2_font_pressstart2p_8f);  // choose a suitable font
-  DIS_LEFT.drawStr(32, 32,"STANDBY");  // write something to the internal memory
-  DIS_LEFT.sendBuffer();         // transfer internal memory to the display
+  DIS_LEFT.setFont(u8g2_font_micro_mn);
+  DIS_LEFT.drawStr(32, 32,"STANDBY"); 
+  DIS_LEFT.sendBuffer();
 
   //Keypad
   keypad.addEventListener(keypadInput); //add an event listener for this keypad
@@ -301,6 +323,7 @@ void setup() {
 void loop() {
   if (completeSeed()){
     Serial.println("Have complete seed!");
+    resetSeed();
   }
   
   //Flip coin
@@ -312,12 +335,23 @@ void loop() {
   
 
   //Smooth Needle
-  Serial.println(t);
   
   String displayText = String("sV/hr:" + String(sv));
   DIS_RIGHT.clearBuffer();
   DIS_RIGHT.drawLine(64, 60, lerp(oldXPos, targetXPos, t), lerp(oldYPos, targetYPos, t));
-  DIS_RIGHT.drawStr(32, 32, displayText.c_str());  // write something to the internal memory
+  DIS_RIGHT.setFont(u8g2_font_pressstart2p_8f);  
+  DIS_RIGHT.drawStr(25, 45, displayText.c_str());
+  DIS_RIGHT.drawCircle(64, 60, 6);
+  DIS_RIGHT.drawLine(0, 0, 0, 20);
+  DIS_RIGHT.drawLine(32, 0, 32, 15);
+  DIS_RIGHT.drawLine(64, 0, 64, 10);
+  DIS_RIGHT.drawLine(96, 0, 96, 15);
+  DIS_RIGHT.drawLine(127, 0, 127, 20);
+  DIS_RIGHT.setFont(u8g2_font_5x7_tn );  
+  DIS_RIGHT.drawStr(0, 30, "0");
+  DIS_RIGHT.drawStr(63, 20, "3");
+  DIS_RIGHT.drawStr(123, 30, "6");
+  
   DIS_RIGHT.sendBuffer();
  
   // put your main code here, to run repeatedly:
@@ -344,6 +378,18 @@ void loop() {
   }
 
   //Update stats
+  String seedStr = "";
+  for (int y = 0; y < 31; y++){
+    if (seed[y] == seedEmpty){
+      seedStr += '*';
+    }
+    else if (seed[y] == 0x01){
+      seedStr += '1';
+    }
+    else{
+      seedStr += '0';
+    }
+  }
   if(t >= 1.0){
     previousMillis = currentMillis;
     cpm = counts * multiplier;
@@ -351,23 +397,24 @@ void loop() {
     
     String cpmStr = "CPM: " + String(cpm);
     String svStr = "sV/hr: " + String(sv);
+    
 
     DIS_LEFT.clearBuffer();
-    DIS_LEFT.drawStr(25, 22, cpmStr.c_str());  // write something to the internal memory
-    DIS_LEFT.drawStr(25, 33, svStr.c_str());  // write something to the internal memory
-    DIS_LEFT.sendBuffer();         // transfer internal memory to the display
-
-    Serial.print("CPM: ");
-    Serial.println(cpm);
-    Serial.print("uSv/hr: ");
-    Serial.println(cpm * 0.00812037);
-    Serial.println("--------------");
+    DIS_LEFT.drawStr(25, 23, cpmStr.c_str());
+    DIS_LEFT.drawStr(25, 33, svStr.c_str());
+    DIS_LEFT.drawStr(0, 43, seedStr.c_str());
+    DIS_LEFT.sendBuffer();
 
     //update guage
     updateGuage(sv, true);
 
     //reset counts
     counts = 0;
+  }
+  else{
+    DIS_LEFT.clearBuffer();
+    DIS_LEFT.drawStr(0, 43, seedStr.c_str());  
+    DIS_LEFT.sendBuffer(); 
   }
   
   char key = keypad.getKey();
@@ -377,12 +424,5 @@ void loop() {
   }
 
   analogWrite(buzzerPin, 0);
-
-  //DEBUG
-   Serial.println("***********");
-  for (int y = 0; y < 31; y++){
-    Serial.print(seed[y]);
-  }
-   Serial.println("***********");
   
 }
