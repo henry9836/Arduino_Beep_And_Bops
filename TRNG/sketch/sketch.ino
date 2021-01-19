@@ -9,10 +9,10 @@
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define LOG_PERIOD 1000.0  //Logging period in milliseconds, recommended value 15000-60000.
+#define LOG_PERIOD 15000.0  //Logging period in milliseconds, recommended value 15000-60000.
 #define MAX_PERIOD 60000.0  //Maximum logging period without modifying this sketch
-#define TUBE_MOD 0.00812037 //Tube modifier
-#define SVMAX 6 //Tube modifier
+float TUBE_MOD = 0.00812037; //Tube modifier
+#define SVMAX 6.0 //Max SV estimated
 #define fingerSerial Serial1
 
 unsigned long counts;     //variable for GM Tube events
@@ -20,7 +20,10 @@ unsigned long cpm;        //variable for CPM
 unsigned int multiplier;  //variable for calculation CPM in this sketch
 unsigned long previousMillis;  //variable for time measurement
 
+int seed[31];
 char cpmBuf[4];
+
+bool coin = false;
 
 const byte KEYROWS = 4;
 const byte KEYCOLS = 4;
@@ -123,11 +126,11 @@ static char cross[] = {
 byte rowPins[KEYROWS] = {36, 34, 32, 30}; 
 byte colPins[KEYCOLS] = {28, 26, 24, 22};
 
-int targetXPos = 0;
-int oldXPos = 0;
-int targetYPos = 0;
-int oldYPos = 0;
-unsigned long entryTime = 0;
+float sv = 0.0;
+float targetXPos = 0.0;
+float oldXPos = 0.0;
+float targetYPos = 0.0;
+float oldYPos = 0.0;
 
 const int buzzerPin = 8;
 
@@ -141,36 +144,54 @@ Keypad keypad = Keypad(makeKeymap(keypadArray), rowPins, colPins, KEYROWS, KEYCO
 U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_LEFT(U8G2_R0, /* clock=*/ 3, /* data=*/ 4, /* cs=*/ 7, /* dc=*/ 6, /* reset=*/ 5);
 U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_RIGHT(U8G2_R0, /* clock=*/ 9, /* data=*/ 10, /* cs=*/ 13, /* dc=*/ 12, /* reset=*/ 11);
 
-void tube_impulse(){       //subprocedure for capturing events from Geiger Kit
+//INTERUPT CAUSED BY RADIATION
+void tube_impulse(){
   counts++;
+  for (int y = 0; y < 31; y++){
+    if (seed[y] == 0){
+      if (coin){
+        seed[y] = 2;
+      }
+      else{
+        seed[y] = 1;
+      }
+      return;
+    }
+  }
+}
+
+bool completeSeed(){
+  for (int y = 0; y < 31; y++){
+    if (seed[y] == 0){
+        return false;
+    }
+  }
+
+  return true;
 }
 
 float lerp(float a, float b, float x)
 {
+  if (x > 1.0){
+    x = 1.0;
+  }
+  else if (x < 0.0){
+    x = 0.0;
+  }
   return a + x * (b - a);
 }
 
-void displayGuage(float val, bool test){
-    //arrow pos
-    entryTime = millis();
-    targetXPos = (((cpm * TUBE_MOD)/SVMAX)*SCREEN_WIDTH);
-    targetYPos = pow(((0.08*(targetXPos)) - (64*0.08)),2);
+void updateGuage(float val, bool test){
+    
+    //update values
+    oldXPos = targetXPos;
+    oldYPos = targetYPos;
 
-    if (!test){
-      while (millis() - entryTime < LOG_PERIOD){
-        float t = ((millis() - entryTime))/LOG_PERIOD;
-        Serial.println(t);
-        
-        String displayText = String("sV/hr:" + String(val));
-        DIS_RIGHT.clearBuffer();
-        DIS_RIGHT.drawLine(64, 60, lerp(oldXPos, targetXPos, t), lerp(oldYPos, targetYPos, t));
-        DIS_RIGHT.drawStr(32, 32, displayText.c_str());  // write something to the internal memory
-        DIS_RIGHT.sendBuffer();
-        }    
-      oldXPos = targetXPos;
-      oldYPos = targetYPos;
-    }
-    else{
+    //Get point on screen
+    targetXPos = (val/SVMAX) * SCREEN_WIDTH;
+    targetYPos = pow(((0.08*(targetXPos)) - (64.0*0.08)),2);
+
+    if (test){
       String displayText = String("sV/hr:" + String(val));
       DIS_RIGHT.clearBuffer();
       DIS_RIGHT.drawLine(64, 60, targetXPos, targetYPos);
@@ -182,14 +203,19 @@ void displayGuage(float val, bool test){
 
 void gaugeTest(){
   
-  for (float i = 0.0f; i < SVMAX; i += 0.1){
-    displayGuage(i, true);
+  for (float i = 0.0f; i < SVMAX; i += 0.1f){
+    updateGuage(i, true);
   }
+  updateGuage(0, true);
+  DIS_RIGHT.clearBuffer();
+  DIS_RIGHT.drawLine(0, 0, 128, 64);
+  DIS_RIGHT.drawLine(0, 64, 128, 0);
+  DIS_RIGHT.drawStr(32, 32, "STANDBY");  // write something to the internal memory
+  DIS_RIGHT.sendBuffer();
   
 }
 
 void keypadInput(KeypadEvent key){
-  gaugeTest();
    switch (keypad.getState()){
     case PRESSED:
       analogWrite(buzzerPin, 350);
@@ -202,6 +228,8 @@ void keypadInput(KeypadEvent key){
       analogWrite(buzzerPin, 350);
       Serial.println(key);
     break;
+
+    delay(5);
   }
 }
 
@@ -229,7 +257,7 @@ int matchPrint(){
 void setup() {
   Serial.begin(9600);
 
-  //Finger print sensor
+  //finger print sensor
   finger.begin(57600);
   delay(5);
   if (finger.verifyPassword()) {
@@ -271,41 +299,27 @@ void setup() {
 }
 
 void loop() {
-  unsigned long currentMillis = millis();
-  if(currentMillis - previousMillis > LOG_PERIOD){
-    previousMillis = currentMillis;
-    cpm = counts * multiplier;
-
-
-    float sv = cpm * TUBE_MOD;
-    String cpmStr = "CPM: " + String(cpm);
-    String svStr = "sV/hr: " + String(sv);
-
-    DIS_LEFT.clearBuffer();
-    DIS_LEFT.drawStr(25, 22, cpmStr.c_str());  // write something to the internal memory
-    DIS_LEFT.drawStr(25, 33, svStr.c_str());  // write something to the internal memory
-    DIS_LEFT.sendBuffer();         // transfer internal memory to the display
-
-    Serial.print("CPM: ");
-    Serial.println(cpm);
-    Serial.print("uSv/hr: ");
-    Serial.println(cpm * 0.00812037);
-    Serial.println("");
-
-    
-    
-    DIS_RIGHT.clearBuffer();
-    displayGuage(sv, true);
-    DIS_RIGHT.sendBuffer();
-    
-    
-    counts = 0;
+  if (completeSeed()){
+    Serial.println("Have complete seed!");
   }
+  
+  //Flip coin
+  coin = !coin;
+  
+  //Get Deltatime
+  unsigned long currentMillis = millis();
+  float t = (currentMillis - previousMillis)/LOG_PERIOD;
+  
 
   //Smooth Needle
+  Serial.println(t);
   
-  
-  
+  String displayText = String("sV/hr:" + String(sv));
+  DIS_RIGHT.clearBuffer();
+  DIS_RIGHT.drawLine(64, 60, lerp(oldXPos, targetXPos, t), lerp(oldYPos, targetYPos, t));
+  DIS_RIGHT.drawStr(32, 32, displayText.c_str());  // write something to the internal memory
+  DIS_RIGHT.sendBuffer();
+ 
   // put your main code here, to run repeatedly:
   int f = matchPrint();
   if (f >= 0){
@@ -328,14 +342,47 @@ void loop() {
     delay(150);
     analogWrite(buzzerPin, 150);
   }
+
+  //Update stats
+  if(t >= 1.0){
+    previousMillis = currentMillis;
+    cpm = counts * multiplier;
+    sv = cpm * TUBE_MOD;
+    
+    String cpmStr = "CPM: " + String(cpm);
+    String svStr = "sV/hr: " + String(sv);
+
+    DIS_LEFT.clearBuffer();
+    DIS_LEFT.drawStr(25, 22, cpmStr.c_str());  // write something to the internal memory
+    DIS_LEFT.drawStr(25, 33, svStr.c_str());  // write something to the internal memory
+    DIS_LEFT.sendBuffer();         // transfer internal memory to the display
+
+    Serial.print("CPM: ");
+    Serial.println(cpm);
+    Serial.print("uSv/hr: ");
+    Serial.println(cpm * 0.00812037);
+    Serial.println("--------------");
+
+    //update guage
+    updateGuage(sv, true);
+
+    //reset counts
+    counts = 0;
+  }
+  
   char key = keypad.getKey();
 
   if (key) {
     Serial.println(key);
   }
-  delay(50);
 
   analogWrite(buzzerPin, 0);
 
+  //DEBUG
+   Serial.println("***********");
+  for (int y = 0; y < 31; y++){
+    Serial.print(seed[y]);
+  }
+   Serial.println("***********");
   
 }
