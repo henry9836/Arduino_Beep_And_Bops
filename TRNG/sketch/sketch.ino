@@ -24,8 +24,7 @@ const byte seedEmpty = 0x02;
 
 byte seed[31];
 char cpmBuf[4];
-
-bool coin = false;
+String seedStr = "";
 
 const byte KEYROWS = 4;
 const byte KEYCOLS = 4;
@@ -125,6 +124,19 @@ char cross[] = {
   0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
   0x00, 0x00, 0x00, 0xE0, };
 
+byte seedt[33] = 
+{
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01,
+    0x01,
+};
+
 byte rowPins[KEYROWS] = {36, 34, 32, 30}; 
 byte colPins[KEYCOLS] = {28, 26, 24, 22};
 
@@ -133,6 +145,8 @@ float targetXPos = 0.0;
 float oldXPos = 0.0;
 float targetYPos = 0.0;
 float oldYPos = 0.0;
+
+bool overrideInterupt = false;
 
 const int buzzerPin = 8;
 unsigned long lastCoinTime = 0;
@@ -149,14 +163,17 @@ U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_RIGHT(U8G2_R0, /* clock=*/ 9, /* data
 
 //INTERUPT CAUSED BY RADIATION
 void tube_impulse(){
+  if (overrideInterupt)
+    return;
 
+  //Check for dupes
   unsigned long currentTime = millis();
-
   if (currentTime != lastCoinTime){
     Serial.println(String(currentTime) + ":L" + String(lastCoinTime)); 
-    int s = millis() % 2;
     lastCoinTime = currentTime;
     counts++;
+    //Get bit by millis
+    int s = currentTime % 2;
     for (int y = 0; y < 31; y++){
       if (seed[y] == seedEmpty){
         if (s == 0){
@@ -171,6 +188,26 @@ void tube_impulse(){
   }
 }
 
+//Handle Input From The Keypad
+void keypadInput(KeypadEvent key){
+   switch (keypad.getState()){
+    case PRESSED:
+      analogWrite(buzzerPin, 350);
+      Serial.println(key);
+    break;
+    case RELEASED:
+      //Serial.println(key);
+    break;
+    case HOLD:
+      analogWrite(buzzerPin, 350);
+      Serial.println(key);
+    break;
+
+    delay(5);
+  }
+}
+
+//Do we have a complete seed?
 bool completeSeed(){
   for (int y = 0; y < 31; y++){
     if (seed[y] == seedEmpty){
@@ -192,6 +229,7 @@ float lerp(float a, float b, float x)
   return a + x * (b - a);
 }
 
+//Set all seed vals to 0x00
 void resetSeed(){
   for (int y = 0; y < 31; y++){
     seed[y] = seedEmpty;
@@ -199,6 +237,7 @@ void resetSeed(){
 
 }
 
+//update Guage info or test it
 void updateGuage(float val, bool test){
     
     //update values
@@ -220,6 +259,7 @@ void updateGuage(float val, bool test){
     
 }
 
+//Guage Tester Function
 void gaugeTest(){
   
   for (float i = 0.0f; i < SVMAX; i += 0.1f){
@@ -234,24 +274,7 @@ void gaugeTest(){
   
 }
 
-void keypadInput(KeypadEvent key){
-   switch (keypad.getState()){
-    case PRESSED:
-      analogWrite(buzzerPin, 350);
-      Serial.println(key);
-    break;
-    case RELEASED:
-      //Serial.println(key);
-    break;
-    case HOLD:
-      analogWrite(buzzerPin, 350);
-      Serial.println(key);
-    break;
-
-    delay(5);
-  }
-}
-
+//Checks fingerprint database
 int matchPrint(){
   uint8_t f = finger.getImage();
   if (f != FINGERPRINT_OK)  {
@@ -320,14 +343,33 @@ void setup() {
   Serial.println("Ready.");
 }
 
+//Convert byte[] seed into a uint64_t
+uint64_t b2d(){
+  overrideInterupt = true;
+  uint64_t val = seedt[0];
+
+  for (int i = 1; i < 31; i += 1){
+      if (seedt[i] == 0x01){
+        //POW func that can handle a uint
+        uint64_t thebigone = 2;
+        for (int p = 1; p < i; p += 1){
+          thebigone *= (uint64_t)2;
+        }
+        val += thebigone;
+      }
+  }
+  
+  overrideInterupt = false;
+  return val;
+}
+
 void loop() {
   if (completeSeed()){
     Serial.println("Have complete seed!");
+    Serial.println(seedStr);
+    Serial.println("--------------------");
     resetSeed();
   }
-  
-  //Flip coin
-  coin = !coin;
   
   //Get Deltatime
   unsigned long currentMillis = millis();
@@ -335,10 +377,12 @@ void loop() {
   
 
   //Smooth Needle
-  
   String displayText = String("sV/hr:" + String(sv));
   DIS_RIGHT.clearBuffer();
-  DIS_RIGHT.drawLine(64, 60, lerp(oldXPos, targetXPos, t), lerp(oldYPos, targetYPos, t));
+
+  //targetYPos = pow(((0.08*(targetXPos)) - (64.0*0.08)),2);
+  float tmpPos = lerp(oldXPos, targetXPos, t);
+  DIS_RIGHT.drawLine(64, 60, tmpPos, pow(((0.08*(tmpPos)) - (64.0*0.08)),2));
   DIS_RIGHT.setFont(u8g2_font_pressstart2p_8f);  
   DIS_RIGHT.drawStr(25, 45, displayText.c_str());
   DIS_RIGHT.drawCircle(64, 60, 6);
@@ -378,7 +422,7 @@ void loop() {
   }
 
   //Update stats
-  String seedStr = "";
+  seedStr = "";
   for (int y = 0; y < 31; y++){
     if (seed[y] == seedEmpty){
       seedStr += '*';
@@ -390,6 +434,8 @@ void loop() {
       seedStr += '0';
     }
   }
+
+  //Set new info and calc new needle pos
   if(t >= 1.0){
     previousMillis = currentMillis;
     cpm = counts * multiplier;
@@ -413,7 +459,8 @@ void loop() {
   }
   else{
     DIS_LEFT.clearBuffer();
-    DIS_LEFT.drawStr(0, 43, seedStr.c_str());  
+    DIS_LEFT.drawStr(0, 43, seedStr.c_str()); 
+    Serial.println(seedStr); 
     DIS_LEFT.sendBuffer(); 
   }
   
