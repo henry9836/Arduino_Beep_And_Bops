@@ -204,7 +204,12 @@ void logScreen(String text, DEBUGTYPE type){
     nextDebugElement = 0;
   }
   DIS_LEFT.sendBuffer();
-  delay(500);
+  if (type == ERR){
+    analogWrite(buzzerPin, 550);
+    delay(1000);
+    analogWrite(buzzerPin, 0);
+  }
+  //delay(500);
 }
 
 //INTERUPT CAUSED BY RADIATION
@@ -310,15 +315,14 @@ void gaugeTest(){
   for (float i = 0.0f; i < SVMAX; i += 0.1f){
     updateGuage(i, true);
   }
+  
   updateGuage(0, true);
   DIS_RIGHT.clearBuffer();
-  DIS_RIGHT.drawLine(0, 0, 128, 64);
-  DIS_RIGHT.drawLine(0, 64, 128, 0);
-  DIS_RIGHT.drawStr(32, 32, "STANDBY");
+  DIS_RIGHT.drawXBM(0, 0, 128, 64, STARTUPLOGO);
   DIS_RIGHT.sendBuffer();
   
   //Debug
-  logScreen("GaugeTest Completed", OK);
+  logScreen("Gauge Range Test Completed", OK);
 }
 
 //Checks fingerprint database
@@ -372,6 +376,7 @@ void setup() {
 
   //Test Pin
   pinMode(testPin, INPUT);
+  
   //seed
   resetSeed();
   
@@ -388,7 +393,7 @@ void setup() {
   
   //Boot screen
   logScreen("System Starting", OK);
-  logScreen("Screens Initalised", OK);
+  logScreen("Screens Initialized", OK);
   analogWrite(buzzerPin, 0);
   
   //Keypad
@@ -406,22 +411,22 @@ void setup() {
   delay(5);
   if (finger.verifyPassword()) {
     Serial.println("Found fingerprint sensor!");
-    logScreen("Fingerprint Sensor Found", OK);
+    logScreen("Fingerprint Check", OK);
   } else {
-    analogWrite(buzzerPin, 550);
     Serial.println("Did not find fingerprint sensor :(");
-    logScreen("Fingerprint Failed To Initalise", ERR);
-    delay(1000);
+    logScreen("Fingerprint Check Failed", ERR);
   }
   analogWrite(buzzerPin, 0);
   
   finger.getParameters();
   finger.getTemplateCount();
 
+  //Finish Setup
   logScreen("Ready.", OK);
+  Serial.println("Ready.");
+  
   //Reset screen left to small font
   DIS_LEFT.setFont(u8g2_font_micro_mn);
-  Serial.println("Ready.");
   delay(1500);
 }
 
