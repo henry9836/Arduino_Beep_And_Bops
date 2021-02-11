@@ -292,6 +292,7 @@ void updateGuage(float val, bool test){
     targetXPos = (val/SVMAX) * SCREEN_WIDTH;
     targetYPos = pow(((0.08*(targetXPos)) - (64.0*0.08)),2);
 
+    //Used for booting
     if (test){
       String displayText = String("sV/hr:" + String(val));
       DIS_RIGHT.clearBuffer();
@@ -384,7 +385,8 @@ void setup() {
   DIS_LEFT.begin();
   DIS_LEFT.clearBuffer();
   DIS_LEFT.setFont(u8g2_font_p01type_tf);
-  //Debug
+  
+  //Boot screen
   logScreen("System Starting", OK);
   logScreen("Screens Initalised", OK);
   analogWrite(buzzerPin, 0);
@@ -396,13 +398,13 @@ void setup() {
   multiplier = MAX_PERIOD / LOG_PERIOD;      //calculating multiplier, depend on your log period
   attachInterrupt(digitalPinToInterrupt(2), tube_impulse, FALLING); //define external interrupts 
 
+  //Do a range test
   gaugeTest();
   
-  //finger print sensor
+  //Fingerprint Sensor
   finger.begin(57600);
   delay(5);
   if (finger.verifyPassword()) {
-    analogWrite(buzzerPin, 0);
     Serial.println("Found fingerprint sensor!");
     logScreen("Fingerprint Sensor Found", OK);
   } else {
@@ -411,6 +413,7 @@ void setup() {
     logScreen("Fingerprint Failed To Initalise", ERR);
     delay(1000);
   }
+  analogWrite(buzzerPin, 0);
   
   finger.getParameters();
   finger.getTemplateCount();
@@ -431,6 +434,7 @@ void loop() {
     Serial.println("OFF");
   }
   Serial.println(constrain(analogRead(testPin), 0, 1023));
+  
   if (completeSeed()){
     Serial.println("Have complete seed!");
     Serial.println(seedStr);
@@ -442,12 +446,12 @@ void loop() {
   unsigned long currentMillis = millis();
   float t = (currentMillis - previousMillis)/LOG_PERIOD;
   
-
   //Smooth Needle
   String displayText = String("sV/hr:" + String(sv));
   DIS_RIGHT.clearBuffer();
 
   //targetYPos = pow(((0.08*(targetXPos)) - (64.0*0.08)),2);
+  //Draw gauage
   float tmpPos = lerp(oldXPos, targetXPos, t);
   DIS_RIGHT.drawLine(64, 60, tmpPos, pow(((0.08*(tmpPos)) - (64.0*0.08)),2));
   DIS_RIGHT.setFont(u8g2_font_pressstart2p_8f);  
@@ -462,11 +466,11 @@ void loop() {
   DIS_RIGHT.drawStr(0, 30, "0");
   DIS_RIGHT.drawStr(63, 20, "3");
   DIS_RIGHT.drawStr(123, 30, "6");
-  
   DIS_RIGHT.sendBuffer();
- 
-  // put your main code here, to run repeatedly:
+
+  //Check fingerprint
   int f = matchPrint();
+  //Correct
   if (f >= 0){
   Serial.println("GOT RET: ");
   Serial.println(f);
@@ -480,6 +484,7 @@ void loop() {
     delay(150);
     analogWrite(buzzerPin, 1023);
   }
+  //Wrong
   else if (f == -9999){
   Serial.println("GOT RET: ");
   Serial.println(f);
@@ -488,7 +493,7 @@ void loop() {
     analogWrite(buzzerPin, 150);
   }
 
-  //Update stats
+  //Show seed
   seedStr = "";
   for (int y = 0; y < 31; y++){
     if (seed[y] == seedEmpty){
@@ -508,16 +513,6 @@ void loop() {
     cpm = counts * multiplier;
     sv = cpm * TUBE_MOD;
     
-    String cpmStr = "CPM: " + String(cpm);
-    String svStr = "sV/hr: " + String(sv);
-    
-
-    DIS_LEFT.clearBuffer();
-    DIS_LEFT.drawStr(25, 23, cpmStr.c_str());
-    DIS_LEFT.drawStr(25, 33, svStr.c_str());
-    DIS_LEFT.drawStr(0, 43, seedStr.c_str());
-    DIS_LEFT.sendBuffer();
-
     //update guage
     updateGuage(sv, true);
 
@@ -527,16 +522,16 @@ void loop() {
   else{
     DIS_LEFT.clearBuffer();
     DIS_LEFT.drawStr(0, 43, seedStr.c_str()); 
-    //Serial.println(seedStr); 
     DIS_LEFT.sendBuffer(); 
   }
-  
+
+  //Keypad
   char key = keypad.getKey();
 
   if (key) {
     Serial.println(key);
   }
 
+  //Reset buzzer
   analogWrite(buzzerPin, 0);
-  
 }
