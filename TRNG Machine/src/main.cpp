@@ -6,16 +6,19 @@
 #include "fingerprint.h"
 #include "radiationEyeCandy.h"
 #include "debugger.h"
+#include "auth.h"
+#include "menu.h"
 
 void setup() {
   Serial.begin(9600);
 
-  //Buzzer
+  //Pins
   pinMode(buzzerPin, OUTPUT);  // sets the pin as output
+  //Bop
   analogWrite(buzzerPin, 250);
-
-  //Test Pin
   pinMode(keyPin, INPUT);
+  pinMode(switchPin, INPUT);
+  pinMode(radPowerPin, OUTPUT);
   
   //seed
   resetSeed();
@@ -65,70 +68,50 @@ void setup() {
   logScreen("Ready.", OK);
   Serial.println("Ready.");
   
-  //Reset screen left to small font
-  DIS_LEFT.setFont(u8g2_font_micro_mn);
   delay(1500);
+
+  //top notch security lamo
+  authenticate();
 }
 
-
 void loop() {
-  // if (constrain(analogRead(keyPin), 0, 1023) == 1023){
-  //   Serial.println("ON");
-  // }
-  // else{
-  //   Serial.println("OFF");
-  // }
-  // Serial.println(constrain(analogRead(keyPin), 0, 1023));
+  //Toggle the gieger counter according to the switch state
+  giegerCounterActive = (constrain(analogRead(switchPin), 0, 1023) == 1023);
+  digitalWrite(radPowerPin, giegerCounterActive);
   
-  if (completeSeed()){
-    Serial.println("Have complete seed!");
-    Serial.println(seedStr);
-    Serial.println("--------------------");
-    resetSeed();
-  }
-  
-  //Get Deltatime
-  unsigned long currentMillis = millis();
-  float deltaTime = (currentMillis - previousMillis)/LOG_PERIOD;
+  //Render screens/menus
+  renderLoop();
 
-  //Smooth Needle
-  smoothGuage(deltaTime);
+  if (giegerCounterActive){
+    if (completeSeed()){
+      updateSeedString();
+      Serial.println("SEED:"+seedStr);
+      b2d();
+      resetSeed();
+    }
+    
+    //Get Deltatime
+    unsigned long currentMillis = millis();
+    float deltaTime = (currentMillis - previousMillis)/LOG_PERIOD;
 
-  //Check fingerprint
-  int f = matchPrint();
+    //Smooth Needle
+    smoothGuage(deltaTime);
 
-  //Correct
-  if (f >= 0){
-    Serial.println("GOT RET: ");
-    Serial.println(f);
-    playSound(ACCESS);
-  }
-  //Wrong
-  else if (f == -9999){
-    Serial.println("GOT RET: ");
-    Serial.println(f);
-    playSound(DENIED);
-  }
-
-  //Show seed
-  updateSeedString();
-  
-  //Set new info and calc new needle pos
-  if(deltaTime >= 1.0){
-    calcNewGuageInfo(currentMillis);
-  }
-  //Draw seed string on left screen
-  else{
-    displaySeedProgress();
-  }
-
-  //Keypad
-  char key = keypad.getKey();
-
-  if (key) {
-    Serial.println(key);
+    //Update seed string
+    updateSeedString();
+    
+    //Set new info and calc new needle pos
+    if(deltaTime >= 1.0){
+      calcNewGuageInfo(currentMillis);
+    }
+    //Draw seed string on left screen
+    else{
+      //displaySeedProgress();
+    }
   }
 
   //Reset buzzer
   analogWrite(buzzerPin, 0);
+
+  delay(100);
 }

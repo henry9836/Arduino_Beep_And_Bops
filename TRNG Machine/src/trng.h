@@ -44,22 +44,37 @@ void resetSeed(){
   }
 }
 
-//Convert byte[] seed into a uint64_t
-uint64_t b2d(){
-  overrideInterupt = true;
-  uint64_t val = seedt[0];
+//Used in standalone mode
+int standalongRNG(){
 
-  for (int i = 1; i < 31; i += 1){
-      if (seedt[i] == 0x01){
-        //POW func that can handle a uint
-        uint64_t thebigone = 2;
-        for (int p = 1; p < i; p += 1){
-          thebigone *= (uint64_t)2;
-        }
-        val += thebigone;
-      }
+  //Use arduino's libary for rng using the seed we generated from uranium
+  randomSeed(lastCompleteSeed);
+  Serial.println(lastCompleteSeed);
+
+  if (standAloneEnd > standAloneStart){
+    return random(standAloneStart, standAloneEnd);
   }
-  
+  else{
+    return random(standAloneEnd, standAloneStart);
+  }
+}
+
+//Convert byte[] seed into a unsigned long, 
+//used to be uint_64 but arduino doesn't seem to like large 64 bit numbers
+unsigned long b2d(){
+  overrideInterupt = true;
+  unsigned long val = 0;
+
+  if (!completeSeed()){
+    return val;
+  }
+
+  for (size_t i = 0; i < 31; i++)
+  {
+    val = (val << 1) + seed[i];
+  }
+ 
   overrideInterupt = false;
+  lastCompleteSeed = val;
   return val;
 }

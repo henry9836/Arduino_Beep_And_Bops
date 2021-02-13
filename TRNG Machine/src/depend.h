@@ -15,6 +15,7 @@ float TUBE_MOD = 0.00812037; //Tube modifier
 
 //Pins
 #define buzzerPin 8
+#define radPowerPin 40
 #define keyPin A0
 #define switchPin A1
 #define fingerSerial Serial1 //Fingerprint serial port
@@ -24,24 +25,17 @@ unsigned long cpm;        //variable for CPM
 unsigned int multiplier;  //variable for calculation CPM in this sketch
 unsigned long previousMillis;  //variable for time measurement
 
-//Seed
+//rng
+bool giegerCounterActive = false;
+int standAloneStart = 0;
+int standAloneEnd = 1;
 byte seed[31];
 char cpmBuf[4];
+unsigned long lastCompleteSeed = 0;
+int standAloneC = 0;
 String seedStr = "";
+String rngStr = "NULL";
 const byte seedEmpty = 0x02; 
-
-byte seedt[33] = 
-{
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01,
-    0x01,
-};
 
 //Keypad
 const byte KEYROWS = 4;

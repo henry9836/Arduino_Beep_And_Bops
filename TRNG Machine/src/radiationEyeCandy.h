@@ -1,5 +1,6 @@
 #pragma once
 #include "depend.h"
+#include "frames.h"
 
 //update Guage info or test it
 void updateGuage(float val, bool test){
@@ -14,7 +15,7 @@ void updateGuage(float val, bool test){
 
     //Used for booting
     if (test){
-      String displayText = String("sV/hr:" + String(val));
+      String displayText = String("usV/hr:" + String(val));
       DIS_RIGHT.clearBuffer();
       DIS_RIGHT.drawLine(64, 60, targetXPos, targetYPos);
       DIS_RIGHT.drawStr(25, 45, displayText.c_str());
@@ -25,7 +26,7 @@ void updateGuage(float val, bool test){
 
 //Smooth Needle
 void smoothGuage(float t){
-  String displayText = String("sV/hr:" + String(sv));
+  String displayText = String("usV/hr:" + String(sv));
   DIS_RIGHT.clearBuffer();
 
   //targetYPos = pow(((0.08*(targetXPos)) - (64.0*0.08)),2);
@@ -76,6 +77,10 @@ void updateSeedString(){
 
 void displaySeedProgress(){
     DIS_LEFT.clearBuffer();
-    DIS_LEFT.drawStr(0, 43, seedStr.c_str()); 
+    DIS_LEFT.drawXBM(25, 10, 86, 22, BINARYTOUSB);
+    DIS_LEFT.setFont(u8g2_font_amstrad_cpc_extended_8u);
+    DIS_LEFT.drawStr(24, 49, "GENERATING"); 
+    DIS_LEFT.setFont(u8g2_font_micro_mn);
+    DIS_LEFT.drawStr(0, 58, seedStr.c_str()); 
     DIS_LEFT.sendBuffer(); 
 }
