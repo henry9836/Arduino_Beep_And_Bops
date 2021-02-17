@@ -25,6 +25,10 @@ unsigned long cpm;        //variable for CPM
 unsigned int multiplier;  //variable for calculation CPM in this sketch
 unsigned long previousMillis;  //variable for time measurement
 
+//Fix for werid analoge input
+unsigned long switchTimeout = 1.0;
+unsigned long lastSwitchChange = 1.0;
+
 //rng
 bool giegerCounterActive = false;
 int standAloneStart = 0;
@@ -51,6 +55,7 @@ const char keypadArray[KEYROWS][KEYCOLS] = {
 //Create keypad
 Keypad keypad = Keypad(makeKeymap(keypadArray), rowPins, colPins, KEYROWS, KEYCOLS); 
 
+//Radiation Display Info
 float sv = 0.0;
 float targetXPos = 0.0;
 float oldXPos = 0.0;
@@ -66,6 +71,18 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerSerial);
 //Create displays
 U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_LEFT(U8G2_R0, /* clock=*/ 3, /* data=*/ 4, /* cs=*/ 7, /* dc=*/ 6, /* reset=*/ 5);
 U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_RIGHT(U8G2_R0, /* clock=*/ 9, /* data=*/ 10, /* cs=*/ 13, /* dc=*/ 12, /* reset=*/ 11);
+
+bool checkSwitch(){
+
+  bool switchRaw = (constrain(analogRead(switchPin), 0, 1023) == 1023);
+  if ((giegerCounterActive != switchRaw) && ((millis() - lastSwitchChange) > switchTimeout)){
+    giegerCounterActive = switchRaw;
+    lastSwitchChange = millis();
+  }
+
+  //giegerCounterActive
+  return giegerCounterActive;
+}
 
 //Simple lerp func
 float lerp(float a, float b, float x)

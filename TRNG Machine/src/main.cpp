@@ -76,7 +76,7 @@ void setup() {
 
 void loop() {
   //Toggle the gieger counter according to the switch state
-  giegerCounterActive = (constrain(analogRead(switchPin), 0, 1023) == 1023);
+  checkSwitch();
   digitalWrite(radPowerPin, giegerCounterActive);
   
   //Render screens/menus
