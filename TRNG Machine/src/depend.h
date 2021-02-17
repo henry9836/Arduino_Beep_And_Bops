@@ -6,6 +6,7 @@
 #include <Adafruit_Fingerprint.h>
 #include <U8g2lib.h>
 
+#define DEBUGMODE 1 //Debug Bypass
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define LOG_PERIOD 15000.0  //Logging period in milliseconds, recommended value 15000-60000.
@@ -26,7 +27,7 @@ unsigned int multiplier;  //variable for calculation CPM in this sketch
 unsigned long previousMillis;  //variable for time measurement
 
 //Fix for werid analoge input
-unsigned long switchTimeout = 1.0;
+const int switchTimeout = 1000;
 unsigned long lastSwitchChange = 1.0;
 
 //rng
@@ -73,11 +74,15 @@ U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_LEFT(U8G2_R0, /* clock=*/ 3, /* data=
 U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI DIS_RIGHT(U8G2_R0, /* clock=*/ 9, /* data=*/ 10, /* cs=*/ 13, /* dc=*/ 12, /* reset=*/ 11);
 
 bool checkSwitch(){
-
   bool switchRaw = (constrain(analogRead(switchPin), 0, 1023) == 1023);
   if ((giegerCounterActive != switchRaw) && ((millis() - lastSwitchChange) > switchTimeout)){
     giegerCounterActive = switchRaw;
     lastSwitchChange = millis();
+  }
+
+  //Debug
+  if (DEBUGMODE){
+    giegerCounterActive = true;
   }
 
   //giegerCounterActive

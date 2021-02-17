@@ -85,7 +85,7 @@ void loop() {
   if (giegerCounterActive){
     if (completeSeed()){
       updateSeedString();
-      Serial.println("SEED:"+seedStr);
+      Serial.println("SEEDBEGIN:"+seedStr+":SEEDEND");
       b2d();
       resetSeed();
     }
@@ -103,10 +103,6 @@ void loop() {
     //Set new info and calc new needle pos
     if(deltaTime >= 1.0){
       calcNewGuageInfo(currentMillis);
-    }
-    //Draw seed string on left screen
-    else{
-      //displaySeedProgress();
     }
   }
 

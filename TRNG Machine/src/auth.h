@@ -6,6 +6,10 @@
 
 void authenticate(){
 
+    if (DEBUGMODE){
+        return;
+    }
+
     //Key
     //Display
     DIS_LEFT.clearBuffer();
