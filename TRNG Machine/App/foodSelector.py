@@ -1,7 +1,6 @@
 import serial
 import _thread
-import googlemaps
-from datetime import datetime
+from selenium import webdriver
 from time import sleep
 
 googleAPIKey = ""
@@ -37,21 +36,20 @@ def recvLoop():
 
 #Entry
 def main():
-    #load api key
-    apiFile = open("key")
-    googleAPIKey = apiFile.readline()
-    apiFile.close()
+    
+    browser = webdriver.Chrome()
+    browser.get('https://www.google.com/search?q=qqqqq')
 
-    print("GMAPS")
-    gmaps = googlemaps.Client(key=googleAPIKey)
-    reverse_geocode_result = gmaps.reverse_geocode((40.714224, -73.961452))
-    print(reverse_geocode_result)
+    sleep(5)
+
+    browser.close()
 
     #serial
     serialPort.baudrate = 9600
     serialPort.port = "COM8"
     serialPort.open()
     sleep(3)
+    
     #spawn recv thread
     _thread.start_new_thread(recvLoop)
 
