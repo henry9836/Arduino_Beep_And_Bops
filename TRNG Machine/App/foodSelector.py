@@ -3,6 +3,7 @@ import _thread
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from time import sleep
+import random
 
 googleAPIKey = ""
 serialPort = serial.Serial()
@@ -66,7 +67,7 @@ def main():
 
         browser.implicitly_wait(1)
 
-        #Find all the elements with a section-result class
+        #Find all the elements with class name section-result
         tmpResults = browser.find_elements_by_class_name("section-result")
         for result in tmpResults:
             results.append(result.get_attribute("aria-label"))
@@ -84,7 +85,7 @@ def main():
     for result in results:
         for prunedResult in prunedResults:
             if (result == prunedResult):
-                print("FOUND DUPE! " + result + " == " + prunedResult)
+                print("[*] Pruned " + result)
                 dupe = True
                 break
         if dupe == False:
@@ -93,7 +94,21 @@ def main():
 
     print("[+] Pruned " + str(len(results) - len(prunedResults)) + " Results")
 
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+    print(results[random.randrange(len(results))])
+
     print("[+] Attempting To Connect On Serial")
+
     #serial
     serialPort.baudrate = 9600
     serialPort.port = "COM8"
