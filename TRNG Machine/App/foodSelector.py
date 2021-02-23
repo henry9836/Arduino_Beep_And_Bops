@@ -1,6 +1,7 @@
 import serial
 import _thread
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from time import sleep
 
 googleAPIKey = ""
@@ -37,21 +38,73 @@ def recvLoop():
 #Entry
 def main():
     
-    browser = webdriver.Chrome()
-    browser.get('https://www.google.com/search?q=qqqqq')
+    print("[+] Starting Lunch Bot...")
+    
+    queryFile = open("queries")
+    queries = queryFile.readlines()
+    queryFile.close()
+    print("[+] Loaded Queries")
 
-    sleep(5)
+    #Use options to tell python where firefox is
+    options = Options()
+    options.binary_location = r"C:/Program Files/Mozilla Firefox/firefox.exe"
+    browser = webdriver.Firefox(options=options)
+    print("[+] Browser driver launched")
 
+    #For all queries log results
+    results = []
+    count = 0
+    for query in queries:
+
+        #Format for web
+        count += 1
+        query = query.replace(' ', '+')
+        query = "https://www.google.co.nz/maps/search/" + query
+
+        #Go to Google Maps
+        browser.get(query)
+
+        browser.implicitly_wait(1)
+
+        #Find all the elements with a section-result class
+        tmpResults = browser.find_elements_by_class_name("section-result")
+        for result in tmpResults:
+            results.append(result.get_attribute("aria-label"))
+            print(result.get_attribute("aria-label"))
+        print("[+] Completed Query " + str(count) + "/" + str(len(queries)))
+    
+    print("[+] Completed All Queries")
+    #close browser as it is no longer needed
     browser.close()
 
+    #Get rid of dupilcate results
+    print("[+] Pruning Results...")
+    prunedResults = []
+    dupe = False
+    for result in results:
+        for prunedResult in prunedResults:
+            if (result == prunedResult):
+                print("FOUND DUPE! " + result + " == " + prunedResult)
+                dupe = True
+                break
+        if dupe == False:
+            prunedResults.append(result)
+        dupe = False
+
+    print("[+] Pruned " + str(len(results) - len(prunedResults)) + " Results")
+
+    print("[+] Attempting To Connect On Serial")
     #serial
     serialPort.baudrate = 9600
     serialPort.port = "COM8"
     serialPort.open()
+    #Arduino needs to startup
     sleep(3)
+    print("[+] Serial Connected")
     
     #spawn recv thread
     _thread.start_new_thread(recvLoop)
+
 
     count = 0
     while True:
