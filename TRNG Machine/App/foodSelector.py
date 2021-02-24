@@ -1,6 +1,7 @@
 import serial
 import _thread
 import sys
+import tkinter as tk
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from time import sleep
@@ -12,6 +13,7 @@ seedEnd = ":SEEDEND"
 magicNumbers = []
 prunedResults = []
 serialConnected = False
+
 
 #Converts a binary string into a number
 def b2d(binaryString):
@@ -42,7 +44,7 @@ def magic(magicNumber):
     a = 48271
     c = 0
     modulus = sys.maxsize
-    result = (a * magicNumber + c) % modulus
+    result = (a * int(magicNumber) + c) % modulus
     return result
 
 #Pick a place to eat
@@ -68,11 +70,26 @@ def pickLocation():
     print(result)
     print(prunedResults[result])
     print("-==========================-")
+    return prunedResults[result]
 
+def tkPick():
+    locResult["text"] = pickLocation()
 
+def logicLoop():
+    global magicNumbers, seedStatus
+    count = -1
+    while True:
+        if (len(magicNumbers) != count):
+            if (len(magicNumbers) > 0):
+                seedStatus["text"] = "Ready. <" + str(len(magicNumbers)) + ">"
+            else:
+                seedStatus["text"] = "Not Ready."
+            count = len(magicNumbers)
+
+        
 #Entry
 def main():
-    global prunedResults, magicNumbers, serialPort, serialConnected
+    global prunedResults, magicNumbers, serialPort, serialConnected, window, seedStatus
     print("[+] Starting Lunch Bot...")
     
     queryFile = open("queries")
@@ -141,19 +158,37 @@ def main():
     except:
         print("[-] Serial Couldn't Connect, using debug list")
         serialConnected = False
-        magicNumbers = [2118123519, 1983905735, 14580398]
+        magicNumbers = [2118123519, 1983905735, 14580398] #random numbers
 
     #Spawn Serial Thread
     _thread.start_new_thread(recvLoop)
+    _thread.start_new_thread(logicLoop)
 
-    count = 0
-    while True:
-        if (count != len(magicNumbers) and len(magicNumbers) > 0):
-            print("======================")
-            print("UPDATE")
-            print(magicNumbers)
-            count = len(magicNumbers)
-            pickLocation()
+    #Start TKinter
+    window.title("TRNG Food Machine")
+    window.geometry("350x405")
+    seedStatus.grid(row = 0, column = 1, pady = 1)
+    pickLocButton.grid(row = 3, column = 0, columnspan = 3, sticky=tk.W+tk.E)
+    locResult.grid(row = 4, column = 0, columnspan = 3)
+    window.mainloop()
+    
+
+#TKINTER
+window = tk.Tk()
+
+#Text
+seedStatus = tk.Label(text="Error")
+locResult = tk.Label(text="Chosen Lunch Spot: ")
+
+#Buttons
+pickLocButton = tk.Button(
+    text="Choose Location",
+    width=35,
+    height=3,
+    bg="white",
+    fg="black",
+    command=tkPick
+)
 
 if __name__ == "__main__":
     main()
