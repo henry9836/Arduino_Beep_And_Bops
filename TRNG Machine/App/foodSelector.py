@@ -1,15 +1,17 @@
 import serial
 import _thread
+import sys
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from time import sleep
-import random
 
 googleAPIKey = ""
 serialPort = serial.Serial()
 seedStart = "SEEDBEGIN:"
 seedEnd = ":SEEDEND"
 magicNumbers = []
+prunedResults = []
+serialConnected = False
 
 #Converts a binary string into a number
 def b2d(binaryString):
@@ -23,8 +25,8 @@ def b2d(binaryString):
 
 #Serial Recieve Thread
 def recvLoop():
-    global serialPort, magicNumbers
-    while True:
+    global serialPort, magicNumbers, serialConnected
+    while serialConnected:
         raw = serialPort.readline()
         if (seedEnd in raw.decode()):
             print(raw)
@@ -36,9 +38,41 @@ def recvLoop():
             #add to magic numbers
             magicNumbers.append(str(b2d(raw)))
 
+def magic(magicNumber):
+    a = 48271
+    c = 0
+    modulus = sys.maxsize
+    result = (a * magicNumber + c) % modulus
+    return result
+
+#Pick a place to eat
+def pickLocation():
+    global prunedResults, magicNumbers
+    if len(magicNumbers) <= 0:
+        print("[-] No Magic Numbers Please Wait And Try Again")
+        return
+
+    #Perform the magic (Based on OpenBSD)
+    result = 0
+    range = len(prunedResults)
+    fixBias = (-range) % range
+    while True:
+        magicDust = magic(magicNumbers[0])
+        if (magicDust >= fixBias):
+            result = magicDust % range
+            break
+    
+    #remove magic number
+    magicNumbers.remove(magicNumbers[0])
+    print("-==========================-")
+    print(result)
+    print(prunedResults[result])
+    print("-==========================-")
+
+
 #Entry
 def main():
-    
+    global prunedResults, magicNumbers, serialPort, serialConnected
     print("[+] Starting Lunch Bot...")
     
     queryFile = open("queries")
@@ -80,7 +114,6 @@ def main():
 
     #Get rid of dupilcate results
     print("[+] Pruning Results...")
-    prunedResults = []
     dupe = False
     for result in results:
         for prunedResult in prunedResults:
@@ -94,42 +127,33 @@ def main():
 
     print("[+] Pruned " + str(len(results) - len(prunedResults)) + " Results")
 
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-    print(results[random.randrange(len(results))])
-
     print("[+] Attempting To Connect On Serial")
 
-    #serial
-    serialPort.baudrate = 9600
-    serialPort.port = "COM8"
-    serialPort.open()
-    #Arduino needs to startup
-    sleep(3)
-    print("[+] Serial Connected")
-    
-    #spawn recv thread
-    _thread.start_new_thread(recvLoop)
+    try:
+        #Connect To Serial
+        serialPort.baudrate = 9600
+        serialPort.port = "COM8"
+        serialPort.open()
+        #Arduino needs to startup
+        sleep(3)
+        serialConnected = True
+        print("[+] Serial Connected")
+    except:
+        print("[-] Serial Couldn't Connect, using debug list")
+        serialConnected = False
+        magicNumbers = [2118123519, 1983905735, 14580398]
 
+    #Spawn Serial Thread
+    _thread.start_new_thread(recvLoop)
 
     count = 0
     while True:
-        if (count != len(magicNumbers)):
+        if (count != len(magicNumbers) and len(magicNumbers) > 0):
             print("======================")
             print("UPDATE")
             print(magicNumbers)
             count = len(magicNumbers)
-
-
+            pickLocation()
 
 if __name__ == "__main__":
     main()
