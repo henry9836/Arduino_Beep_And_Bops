@@ -5,6 +5,7 @@ import tkinter as tk
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from time import sleep
+from datetime import timedelta
 
 googleAPIKey = ""
 serialPort = serial.Serial()
@@ -75,6 +76,7 @@ def pickLocation():
 def tkPick():
     locResult["text"] = pickLocation()
 
+
 def logicLoop():
     global magicNumbers, seedStatus
     count = -1
@@ -85,6 +87,16 @@ def logicLoop():
             else:
                 seedStatus["text"] = "Not Ready."
             count = len(magicNumbers)
+
+        if locResult["text"] != "Chosen Lunch Spot: ":
+            if (len(magicNumbers) > 0):
+                seedStatus["text"] = "Ready. <" + str(len(magicNumbers)) + ">"
+            else:
+                seedStatus["text"] = "Not Ready."
+            count = len(magicNumbers)
+            sleep(10)
+            locResult["text"] = "Chosen Lunch Spot: "
+            
 
         
 #Entry
@@ -166,7 +178,7 @@ def main():
 
     #Start TKinter
     window.title("TRNG Food Machine")
-    window.geometry("350x405")
+    window.geometry("250x100")
     seedStatus.grid(row = 0, column = 1, pady = 1)
     pickLocButton.grid(row = 3, column = 0, columnspan = 3, sticky=tk.W+tk.E)
     locResult.grid(row = 4, column = 0, columnspan = 3)
