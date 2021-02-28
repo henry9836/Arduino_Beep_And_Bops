@@ -87,15 +87,6 @@ def logicLoop():
             else:
                 seedStatus["text"] = "Not Ready."
             count = len(magicNumbers)
-
-        if locResult["text"] != "Chosen Lunch Spot: ":
-            if (len(magicNumbers) > 0):
-                seedStatus["text"] = "Ready. <" + str(len(magicNumbers)) + ">"
-            else:
-                seedStatus["text"] = "Not Ready."
-            count = len(magicNumbers)
-            sleep(10)
-            locResult["text"] = "Chosen Lunch Spot: "
             
 
         

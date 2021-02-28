@@ -6,7 +6,7 @@
 #include <Adafruit_Fingerprint.h>
 #include <U8g2lib.h>
 
-#define DEBUGMODE 1 //Debug Bypass
+#define DEBUGMODE 0 //Debug Bypass
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define LOG_PERIOD 15000.0  //Logging period in milliseconds, recommended value 15000-60000.
